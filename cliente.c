@@ -1,8 +1,8 @@
-#include <stdio.h>
+ #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include "ModbusAPCS.h"
+#include "ModbusAP.h"
 
 #define ADDR_LEN 25
 
@@ -16,7 +16,7 @@ int main()
     uint8_t *val;
     char address[ADDR_LEN];
 
-    val=(char *) malloc(1);
+    val=(uint8_t *) malloc(1);
 
     printf("Endereco do servidor: ");
 
