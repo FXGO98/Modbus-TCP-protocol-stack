@@ -4,6 +4,8 @@
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
 #define MBAP 7
 
 int write (int fd,uint8_t *PDU, int PDUlen)
@@ -52,22 +54,32 @@ int Send_Modbus_Request (char *address, unsigned short port, uint8_t *APDU, int 
     if (address == NULL)
         return -1;
 
-    if (port == NULL)
+    printf("\n Adress ok \n");
+
+    if (port < 0)
         return -1;
 
-    if (APDUlen == NULL)
+    printf("\n Port ok \n");
+
+    if (APDUlen <= 0)
 
         return -1;
+
+    printf("\n APDUlen ok \n");
 
     if (APDU ==  NULL)
         return -1;
 
+    printf("\n APDU ok \n");
+
     if (APDU_R == NULL)
         return -1;
 
+    printf("\n APDU_R ok \n");
+
     srand(time(NULL));  
 
-    int TI = rand() 65535 + 1;
+    int TI = rand() % 65535 + 1;
 
     aux[0]=TI;
 
@@ -117,14 +129,19 @@ int Send_Modbus_Request (char *address, unsigned short port, uint8_t *APDU, int 
     if(connect_check == -1)
         return -1;
 
+    printf("\n Connect ok \n");
+
     write_check = write(sock, PDU, PDUlen);
 
     if (write_check == -1)
         return -1;
+    printf("\n Write ok \n");
 
     response = read(sock, PDU_R, PDU_Rlen);
 
-    close(serv);
+    printf("\n Read ok \n");
+
+    shutdown(sock, SHUT_RDWR);
 
     if (response == 0)
     {
@@ -138,10 +155,12 @@ int Send_Modbus_Request (char *address, unsigned short port, uint8_t *APDU, int 
 
             n++;
         }
+
+        return 0;
     }
     
     else 
         return -1;
 
-    return 0;
+
 }

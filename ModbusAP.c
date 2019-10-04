@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "ModbusTCP.h"
 #define BUFFER 50
 
@@ -8,7 +9,11 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
 {
     int i, n, response, APDU_len;
     
-    uint8_t *APDU, *APDU_R, aux[2]={0};
+    uint8_t *APDU, *APDU_R, *aux;
+    
+    aux= (uint8_t *) malloc(2 * sizeof(uint8_t));
+
+    aux[0]=aux[1]=0;
 
     if (address==NULL)
     {
@@ -17,29 +22,29 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
         return -1;
     }
 
-    if (port==NULL)
+    if (port < 0)
     {
         printf("Port missing\n");
 
         return -1;
     }
 
-    if((n_r<121) || (n_r==0))
+    if((n_r>121) || (n_r==0))
     {
         printf("Invalid number of Registers\n");
 
         return -1;
     }
 
-    APDU_R = (uint8_t *) malloc(1);
+    APDU_R = (uint8_t *) malloc(1 * sizeof(uint8_t));
 
     val = (uint8_t *) realloc(val, 2*n_r);
 
     printf("Values:");
 
-    for(i=0;i<n_r;i++)
+    for(i=0;i<(2*n_r);i++)
     {
-        scanf("%d", &aux[0]);
+        scanf("%hd", &aux[0]);
 
         val[i]= aux[1];
 
@@ -72,6 +77,8 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
 
     n=6;
 
+    printf("\nAPDU START\n");
+
     for(i=0;i<n_r;i++)
     {
         APDU[n]=val[i];
@@ -79,9 +86,15 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
         n++;
     }
 
+    printf("\nAPDU FINISHED\n");
+
     APDU_len= sizeof(APDU);
 
+    printf("\nAPDU_len = %d\n", APDU_len);
+
     response= Send_Modbus_Request(address, port, APDU, APDU_len, APDU_R);
+
+    printf("\n response = %d \n", response);
 
     if (response == -1)
         return -1;
@@ -118,7 +131,7 @@ int Write_Multiple_Coils (char *address, unsigned short port, unsigned int st_c,
         return 0;
     }
 
-    if((n_c<121) || (n_c==0))
+    if((n_c>121) || (n_c==0))
     {
         printf("Invalid number of Registers");
 
@@ -134,7 +147,7 @@ int Write_Multiple_Coils (char *address, unsigned short port, unsigned int st_c,
     response= Send_Modbus_Request(address, port, APDU, APDU_len, APDU_R);
 
 }
-*/ 
+
 int Read_h_regs (char *address, unsigned short port, unsigned int st_r, unsigned int n_r, uint8_t *val)
 { 
    int i, n, response, APDU_len;
@@ -155,7 +168,7 @@ int Read_h_regs (char *address, unsigned short port, unsigned int st_r, unsigned
         return 0;
     }
 
-    if((n_r<121) || (n_r==0))
+    if((n_r>121) || (n_r==0))
     {
         printf("Invalid number of Registers\n");
 
@@ -190,7 +203,7 @@ int Read_h_regs (char *address, unsigned short port, unsigned int st_r, unsigned
 
     
 }
-/*
+
 int Read_coils (char *address, unsigned short port, unsigned int st_c, unsigned int n_c, uint8_t *val)
 {
     int i, response, APDU_len;
@@ -212,7 +225,7 @@ int Read_coils (char *address, unsigned short port, unsigned int st_c, unsigned 
         return 0;
     }
 
-    if((n_c<121) || (n_c==0))
+    if((n_c>121) || (n_c==0))
     {
         printf("Invalid number of Registers");
 

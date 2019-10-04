@@ -20,11 +20,11 @@ int main()
 
     printf("Endereco do servidor: ");
 
-    scanf("%s", &address);
+    scanf("%s", address);
 
     printf("\nPort:");
 
-    scanf("%d", &port);
+    scanf("%hu", &port);
 
     printf("\nReference Number: ");
 
@@ -60,7 +60,7 @@ int main()
 
         }
         break;
-
+/*
         case 2:
         {
             num=Write_Multiple_Coils (address, port, st_c, n_c, val);
@@ -108,7 +108,7 @@ int main()
             printf("\n%d Coil(s) was/were read", num);
         }
         break;
-
+*/
         default:
         break;
     }
