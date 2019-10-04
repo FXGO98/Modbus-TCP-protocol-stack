@@ -6,6 +6,3 @@ int Read_h_regs (char *address, unsigned short port, unsigned int st_r, unsigned
 
 int Read_coils (char *address, unsigned short port, unsigned int st_c, unsigned int n_c, uint16_t *val);
 
-Get_request (fd , op, st , n, val);
-
-Send_response (TI, op, st , n, val);

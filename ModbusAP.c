@@ -14,21 +14,21 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
     {
         printf("Server Adress missing\n");
 
-        return 0;
+        return -1;
     }
 
     if (port==NULL)
     {
         printf("Port missing\n");
 
-        return 0;
+        return -1;
     }
 
     if((n_r<121) || (n_r==0))
     {
         printf("Invalid number of Registers\n");
 
-        return 0;
+        return -1;
     }
 
     APDU_R = (uint8_t *) malloc(1);
@@ -83,8 +83,14 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
 
     response= Send_Modbus_Request(address, port, APDU, APDU_len, APDU_R);
 
-    // checks the reponse APDU_R or error_code
-    // returns: number of written regs / coils ok, <0 error
+    if (response == -1)
+        return -1;
+
+    if((APDU_R[(sizeof(APDU_R-1))]==(APDU[4])) && (APDU_R[(sizeof(APDU_R-2))]==(APDU[3])))
+        return n_r;
+
+    else 
+        return -1;
 
 }
 

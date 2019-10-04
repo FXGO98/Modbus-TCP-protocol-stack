@@ -48,6 +48,14 @@ int main()
         {
             num=Write_Multiple_Regs (address, port, st_r, n_r, val);
 
+            if(num<0)
+            {
+                printf("\nWritting Error\n");
+
+                return 0;
+            }
+
+            else
             printf("\n%d Register(s) was/were written", num);
 
         }
@@ -57,6 +65,14 @@ int main()
         {
             num=Write_Multiple_Coils (address, port, st_c, n_c, val);
 
+            if(num<0)
+            {
+                printf("\nWritting Error\n");
+
+                return 0;
+            }
+
+            else
             printf("\n%d Coil(s) was/were written", num);
         }
         break;
@@ -65,6 +81,14 @@ int main()
         {
             num=Read_h_regs (address, port, st_r, n_r, val);
 
+            if(num<0)
+            {
+                printf("\nReading Error\n");
+
+                return 0;
+            }
+            
+            else
             printf("\n%d Register(s) was/were read", num);
         }
         break;
@@ -73,6 +97,14 @@ int main()
         {
             num=Read_coils (address, port, st_c, n_c, val);
 
+            if(num<0)
+            {
+                printf("\nReading Error\n");
+
+                return 0;
+            }
+
+            else
             printf("\n%d Coil(s) was/were read", num);
         }
         break;
