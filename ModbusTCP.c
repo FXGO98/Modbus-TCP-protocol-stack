@@ -79,9 +79,13 @@ int Send_Modbus_Request (char *address, unsigned short port, uint8_t *APDU, int 
 
     srand(time(NULL));  
 
-    int TI = rand() % 65535 + 1;
+    int TI = rand() % 99+ 1;
+
+    printf("TI = %d", TI);
 
     aux[0]=TI;
+
+    printf("\nPDULEN= %d \n",APDUlen + MBAP);
 
     PDU= (uint8_t *) malloc(MBAP+APDUlen);
 
@@ -118,13 +122,20 @@ int Send_Modbus_Request (char *address, unsigned short port, uint8_t *APDU, int 
 	serv.sin_port = htons(port);
 	inet_aton(address, &serv.sin_addr);
 
-    PDUlen = sizeof(PDU);
+    PDUlen = MBAP + APDUlen;
 
-    PDU_R = (uint8_t *) malloc(1);
+    printf("\nPDU: ");
 
-    PDU_Rlen = sizeof(PDU_R);
+    for(i=0;i< (MBAP+APDUlen);i++)
+    {
+        printf("%hu ", PDU[i]);
+    }
+
+    PDU_Rlen = MBAP + 5;
+
+    PDU_R = (uint8_t *) malloc(PDU_Rlen);
 	
-	connect(sock, (struct sockaddr *)&serv, addlen);
+	connect_check = connect(sock, (struct sockaddr *)&serv, addlen);
 
     if(connect_check == -1)
         return -1;
@@ -141,26 +152,49 @@ int Send_Modbus_Request (char *address, unsigned short port, uint8_t *APDU, int 
 
     printf("\n Read ok \n");
 
+    printf("\nPDU_R: ");
+
+    for(i=0;i< PDU_Rlen;i++)
+    {
+        printf("%hu ", PDU_R[i]);
+    }
+
     shutdown(sock, SHUT_RDWR);
+
+    printf("response1 = %d", response);
+
+    if((PDU_R[0]!=PDU[0]) || (PDU_R[1]!=PDU[1]))
+        return -1;
 
     if (response == 0)
     {
         APDU_R = (uint8_t *) realloc(APDU_R, PDU_Rlen-MBAP);
 
-        n=MBAP+1;
+        n=MBAP;
 
-        for(i=0;i<(sizeof(APDU_R));i++)
+        printf("\nMBAP+1 = %d\n", n);
+
+        printf("\nPDU_Rlen-MBAP = %d", PDU_Rlen - MBAP);
+
+        for(i=0;i<(PDU_Rlen-MBAP);i++)
         {
             APDU_R[i] = PDU_R[n];
 
             n++;
         }
 
+         printf("\nAPDU_R: ");
+
+        for(i=0;i < ((PDU_R[5])-1);i++)
+        {
+            printf("%hu ", APDU_R[i]);
+        }
+
+
         return 0;
     }
     
     else 
         return -1;
-
 
 }

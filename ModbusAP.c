@@ -2,18 +2,26 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "ModbusTCP.h"
-#define BUFFER 50
 
 
 int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, unsigned int n_r, uint8_t *val)
 {
-    int i, n, response, APDU_len;
+    int i, n, response, APDU_len, s;
     
     uint8_t *APDU, *APDU_R, *aux;
     
     aux= (uint8_t *) malloc(2 * sizeof(uint8_t));
 
     aux[0]=aux[1]=0;
+
+    s=2*n_r + 6;
+
+    printf("\ns = %d\n", s);
+
+    APDU= (uint8_t *) malloc(s);
+
+    APDU_len= s;
+
 
     if (address==NULL)
     {
@@ -55,7 +63,6 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
         aux[0]=aux[1]=0;
     }
 
-    APDU= (uint8_t *) malloc(2*n_r+6);
 
     APDU[0]=16;
 
@@ -79,7 +86,9 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
 
     printf("\nAPDU START\n");
 
-    for(i=0;i<n_r;i++)
+    printf("\nAPDU_len = %d\n", APDU_len);
+
+    for(i=0;i<((APDU_len)-6);i++)
     {
         APDU[n]=val[i];
 
@@ -88,9 +97,14 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
 
     printf("\nAPDU FINISHED\n");
 
-    APDU_len= sizeof(APDU);
+    printf("\nAPDU: ");
 
-    printf("\nAPDU_len = %d\n", APDU_len);
+    for(i=0;i<(2*n_r+6);i++)
+    {
+        printf("%hu ", APDU[i]);
+    }
+
+     printf("\nAPDU_len = %d\n", APDU_len);
 
     response= Send_Modbus_Request(address, port, APDU, APDU_len, APDU_R);
 
@@ -99,11 +113,19 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
     if (response == -1)
         return -1;
 
-    if((APDU_R[(sizeof(APDU_R-1))]==(APDU[4])) && (APDU_R[(sizeof(APDU_R-2))]==(APDU[3])))
+    for(i=0;i<(APDU_len-2*n_r-1);i++)
+    {
+        if(APDU[i]!=APDU_R[i])
+            return -1;
+    }
+
+    return n_r;
+
+    /*if((APDU_R[(sizeof(APDU_R-1))]==(APDU[4])) && (APDU_R[(sizeof(APDU_R-2))]==(APDU[3])))
         return n_r;
 
     else 
-        return -1;
+        return -1;*/
 
 }
 
