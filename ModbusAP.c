@@ -3,26 +3,117 @@
 #include <stdlib.h>
 #include "ModbusTCP.h"
 
+//Função para terminar a ligação com o cliente e que recebe os pedidos do cliente
+int Get_request (int fd, int *op, int *st, int *n, uint8_t *val)
+{   
+    int TI, APDUlen, p, i;
 
-int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, unsigned int n_r, uint8_t *val)
+    uint8_t *APDU;
+
+    //Função para terminar a ligação com o cliente e que recebe os pedidos do cliente
+    TI = Receive_Modbus_request(fd, APDU, APDUlen);
+
+     printf("\n APDU: ");
+
+    for(i=0;i<(2*(*n));i++)
+    {
+        printf(" %d", APDU[i]);
+    }
+
+    //Define op, st, n e val
+
+    *op = APDU[0];
+
+    *st = APDU[2] + (APDU[1]<<8);
+
+    *n = APDU[4] + (APDU[3]<<8);
+
+    val = (uint8_t *) malloc ((2*(*n))*sizeof(uint8_t));
+
+    p=5;
+
+    for(i=0;i<(2*(*n));i++)
+    {
+        val[i] = APDU[p];
+
+        p++;
+    }
+    //retorna o Transaction ID
+    return TI;
+}
+
+//Envia a resposta para o Cliente
+int Send_response (int fd, int TI, int op, int st, int n, uint8_t *val)
 {
-    int i, n, response, APDU_len, s;
+    uint8_t *APDU_R, *aux;
+
+    int APDU_Rlen, SMR_check, i;
+
+    aux = (uint8_t *) malloc(2 * sizeof(uint8_t));
+
+    aux[0] = aux[1] = 0;
+
+    //Dependendo da função gera p APDU da resposta
+    if(op==16)
+    {
+        APDU_Rlen = 5;
+
+        APDU_R = (uint8_t *) malloc(APDU_Rlen * sizeof(uint8_t));
+
+        APDU_R[0] = op;
+
+        aux[0] = st;
+
+        APDU_R[1]= aux[1];
+
+        APDU_R[2] = aux[0];
+
+        aux[0] = aux[1] = 0;
+
+        aux[0] = n;
+
+        APDU_R[3] = aux[1]; 
+
+        APDU_R[4] = aux[0];
+    }
+
+     printf("\n APDU_R: ");
+
+    for(i=0;i<APDU_Rlen;i++)
+    {
+        printf(" %d", APDU_R[i]);
+    }
+   
+    //gera PDU e envia a resposta
+    SMR_check = Send_Modbus_response (fd, TI, APDU_R, APDU_Rlen);
+    
+    if(SMR_check == -1)
+        return -1;
+
+    else
+        return 0;
+    
+}
+
+//Realiza a função de escrever registos no servidor
+int Write_Multiple_Regs (int *fd, char *address, unsigned short port, unsigned int st_r, unsigned int n_r, uint8_t *val)
+{
+    int i, n, response, APDU_len;
     
     uint8_t *APDU, *APDU_R, *aux;
+
+    APDU_R = (uint8_t *) malloc(1 * sizeof(uint8_t));
     
     aux= (uint8_t *) malloc(2 * sizeof(uint8_t));
 
     aux[0]=aux[1]=0;
 
-    s=2*n_r + 6;
+    APDU_len= 2*n_r + 6;
 
-    printf("\ns = %d\n", s);
-
-    APDU= (uint8_t *) malloc(s);
-
-    APDU_len= s;
+    APDU= (uint8_t *) malloc(APDU_len);
 
 
+    //Verifica os argumentos da função
     if (address==NULL)
     {
         printf("Server Adress missing\n");
@@ -44,9 +135,7 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
         return -1;
     }
 
-    APDU_R = (uint8_t *) malloc(1 * sizeof(uint8_t));
-
-    val = (uint8_t *) realloc(val, 2*n_r);
+    val = (uint8_t *) malloc(2*n_r);
 
     printf("Values:");
 
@@ -63,6 +152,7 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
         aux[0]=aux[1]=0;
     }
 
+    //Gera APDU
 
     APDU[0]=16;
 
@@ -84,10 +174,6 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
 
     n=6;
 
-    printf("\nAPDU START\n");
-
-    printf("\nAPDU_len = %d\n", APDU_len);
-
     for(i=0;i<((APDU_len)-6);i++)
     {
         APDU[n]=val[i];
@@ -95,23 +181,26 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
         n++;
     }
 
-    printf("\nAPDU FINISHED\n");
-
     printf("\nAPDU: ");
 
     for(i=0;i<(2*n_r+6);i++)
     {
         printf("%hu ", APDU[i]);
     }
-
-     printf("\nAPDU_len = %d\n", APDU_len);
-
-    response= Send_Modbus_Request(address, port, APDU, APDU_len, APDU_R);
-
-    printf("\n response = %d \n", response);
+    //Envia o pedido ao servidor
+    *fd= Send_Modbus_Request(address, port, APDU, APDU_len, APDU_R);
 
     if (response == -1)
         return -1;
+
+     printf("\nAPDU_R: ");
+
+    for(i=0;i<5;i++)
+    {
+        printf("%hu ", APDU_R[i]);
+    }
+
+    //Verifica se a resposta é válida tendo em conta o pedido 
 
     for(i=0;i<(APDU_len-2*n_r-1);i++)
     {
@@ -120,12 +209,6 @@ int Write_Multiple_Regs (char *address, unsigned short port, unsigned int st_r, 
     }
 
     return n_r;
-
-    /*if((APDU_R[(sizeof(APDU_R-1))]==(APDU[4])) && (APDU_R[(sizeof(APDU_R-2))]==(APDU[3])))
-        return n_r;
-
-    else 
-        return -1;*/
 
 }
 
